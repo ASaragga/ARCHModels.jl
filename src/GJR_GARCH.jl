@@ -4,14 +4,14 @@
 struct GJR_GARCH{o, p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
     coefs::Vector{T}
     function GJR_GARCH{o, p, q, T}(coefs::Vector{T}) where {o, p, q, T}
-        length(coefs) == nparams(TGARCH{o, p, q})  || throw(NumParamError(nparams(TGARCH{o, p, q}), length(coefs)))
+        length(coefs) == nparams(GJR_GARCH{o, p, q})  || throw(NumParamError(nparams(GJR_GARCH{o, p, q}), length(coefs)))
         new{o, p, q, T}(coefs)
     end
 end
 
 """
     GJR_GARCH{o, p, q}(coefs) -> UnivariateVolatilitySpec
-Construct a TGARCH specification with the given parameters.
+Construct a GJR_GARCH specification with the given parameters.
 
 # Example:
 ```jldoctest
