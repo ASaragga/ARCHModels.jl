@@ -1,22 +1,22 @@
 """
-    TGARCH{o, p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
+    GJR_GARCH{o, p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
 """
-struct TGARCH{o, p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
+struct GJR_GARCH{o, p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
     coefs::Vector{T}
-    function TGARCH{o, p, q, T}(coefs::Vector{T}) where {o, p, q, T}
+    function GJR_GARCH{o, p, q, T}(coefs::Vector{T}) where {o, p, q, T}
         length(coefs) == nparams(TGARCH{o, p, q})  || throw(NumParamError(nparams(TGARCH{o, p, q}), length(coefs)))
         new{o, p, q, T}(coefs)
     end
 end
 
 """
-    TGARCH{o, p, q}(coefs) -> UnivariateVolatilitySpec
+    GJR_GARCH{o, p, q}(coefs) -> UnivariateVolatilitySpec
 Construct a TGARCH specification with the given parameters.
 
 # Example:
 ```jldoctest
-julia> TGARCH{1, 1, 1}([1., .04, .9, .01])
-TGARCH{1, 1, 1} specification.
+julia> GJR_GARCH{1, 1, 1}([1., .04, .9, .01])
+GJR_GARCH{1, 1, 1} specification.
 
 ─────────────────────────────────
                ω    γ₁   β₁    α₁
@@ -25,7 +25,7 @@ Parameters:  1.0  0.04  0.9  0.01
 ─────────────────────────────────
 ```
 """
-TGARCH{o, p, q}(coefs::Vector{T}) where {o, p, q, T}  = TGARCH{o, p, q, T}(coefs)
+GJR_GARCH{o, p, q}(coefs::Vector{T}) where {o, p, q, T}  = GJR_GARCH{o, p, q, T}(coefs)
 
 """
     GARCH{p, q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
@@ -47,7 +47,7 @@ Parameters:  1.0  0.3  0.4  0.05
 ```
 
 """
-const GARCH = TGARCH{0}
+const GARCH = GJR_GARCH{0}
 
 """
     ARCH{q, T<:AbstractFloat} <: UnivariateVolatilitySpec{T}
@@ -70,14 +70,14 @@ Parameters:  1.0  0.3  0.4
 """
 const ARCH = GARCH{0}
 
-@inline nparams(::Type{<:TGARCH{o, p, q}}) where {o, p, q} = o+p+q+1
-@inline nparams(::Type{<:TGARCH{o, p, q}}, subset) where {o, p, q} = isempty(subset) ? 1 : sum(subset) + 1
+@inline nparams(::Type{<:GJR_GARCH{o, p, q}}) where {o, p, q} = o+p+q+1
+@inline nparams(::Type{<:GJR_GARCH{o, p, q}}, subset) where {o, p, q} = isempty(subset) ? 1 : sum(subset) + 1
 
-@inline presample(::Type{<:TGARCH{o, p, q}}) where {o, p, q} = max(o, p, q)
+@inline presample(::Type{<:GJR_GARCH{o, p, q}}) where {o, p, q} = max(o, p, q)
 
 
 Base.@propagate_inbounds @inline function update!(
-        ht, lht, zt, at, ::Type{<:TGARCH{o, p, q}}, garchcoefs,
+        ht, lht, zt, at, ::Type{<:GJR_GARCH{o, p, q}}, garchcoefs,
 		current_horizon=1
         ) where {o, p, q}
     mht = garchcoefs[1]
@@ -101,7 +101,7 @@ Base.@propagate_inbounds @inline function update!(
     return nothing
 end
 
-@inline function uncond(::Type{<:TGARCH{o, p, q}}, coefs::Vector{T}) where {o, p, q, T}
+@inline function uncond(::Type{<:GJR_GARCH{o, p, q}}, coefs::Vector{T}) where {o, p, q, T}
     den=one(T)
     for i = 1:o
         den -= coefs[i+1]/2
@@ -112,7 +112,7 @@ end
     h0 = coefs[1]/den
 end
 
-function startingvals(::Type{<:TGARCH{o,p,q}}, data::Array{T}) where {o, p, q, T}
+function startingvals(::Type{<:GJR_GARCH{o,p,q}}, data::Array{T}) where {o, p, q, T}
     x0 = zeros(T, o+p+q+1)
     x0[2:o+1] .= 0.04/o
     x0[o+2:o+p+1] .= 0.9/p
@@ -121,7 +121,7 @@ function startingvals(::Type{<:TGARCH{o,p,q}}, data::Array{T}) where {o, p, q, T
     return x0
 end
 
-function startingvals(TT::Type{<:TGARCH}, data::Array{T} , subset::Tuple) where {T}
+function startingvals(TT::Type{<:GJR_GARCH}, data::Array{T} , subset::Tuple) where {T}
 	o, p, q = subsettuple(TT, subsetmask(TT, subset)) # defend against (p, q) instead of (o, p, q)
 	x0 = zeros(T, o+p+q+1)
     x0[2:o+1] .= 0.04/o
@@ -134,7 +134,7 @@ function startingvals(TT::Type{<:TGARCH}, data::Array{T} , subset::Tuple) where 
     return x0long
 end
 
-function constraints(::Type{<:TGARCH{o,p,q}}, ::Type{T}) where {o,p, q, T}
+function constraints(::Type{<:GJR_GARCH{o,p,q}}, ::Type{T}) where {o,p, q, T}
     lower = zeros(T, o+p+q+1)
     upper = ones(T, o+p+q+1)
     upper[2:o+1] .= ones(T, o)/2
@@ -142,7 +142,7 @@ function constraints(::Type{<:TGARCH{o,p,q}}, ::Type{T}) where {o,p, q, T}
     return lower, upper
 end
 
-function coefnames(::Type{<:TGARCH{o,p,q}}) where {o,p, q}
+function coefnames(::Type{<:GJR_GARCH{o,p,q}}) where {o,p, q}
     names = Array{String, 1}(undef, o+p+q+1)
     names[1] = "ω"
     names[2:o+1] .= (i -> "γ"*subscript(i)).([1:o...])
@@ -151,7 +151,7 @@ function coefnames(::Type{<:TGARCH{o,p,q}}) where {o,p, q}
     return names
 end
 
-@inline function subsetmask(VS_large::Union{Type{TGARCH{o, p, q}}, Type{TGARCH{o, p, q, T}}}, subs) where {o, p, q, T}
+@inline function subsetmask(VS_large::Union{Type{GJR_GARCH{o, p, q}}, Type{GJR_GARCH{o, p, q, T}}}, subs) where {o, p, q, T}
 	ind = falses(nparams(VS_large))
 	subset = zeros(Int, 3)
 	subset[4-length(subs):end] .= subs
@@ -168,7 +168,7 @@ end
 	ind
 end
 
-@inline function subsettuple(VS_large::Union{Type{TGARCH{o, p, q}}, Type{TGARCH{o, p, q, T}}}, subsetmask) where {o, p, q, T}
+@inline function subsettuple(VS_large::Union{Type{GJR_GARCH{o, p, q}}, Type{GJR_GARCH{o, p, q, T}}}, subsetmask) where {o, p, q, T}
 	os = 0
 	ps = 0
 	qs = 0
